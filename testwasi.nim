@@ -57,18 +57,18 @@ proc spinCameraTask(task: Task): auto =
 when defined(wasi):
     proc initialize(argc: cint, args: ptr UncheckedArray[cstring], env: ptr UncheckedArray[cstring]): int {.importc: "main".}
 
-    proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
-
 proc setup() : void {.exportC:"setup".} =
+
+    discard load_prc_file(init_fileName("/Volumes/btrfs/sdk/nim.test/nimsdk/wasi.prc"))
+
     when defined(wasi):
         #discard initialize(0, nil,nil)
         echo "_initialize"
-
         echo "hello wasi"
+    else:
+        discard load_prc_file_data("", "load-display x11display")
+        discard load_prc_file_data("", "window-type offscreen")
 
-        discard load_prc_file(init_fileName("/Volumes/btrfs/sdk/nim.test/nimsdk/wasi.prc"))
-
-        #init_libtinydisplay()
 
     echo "setup:begin"
 

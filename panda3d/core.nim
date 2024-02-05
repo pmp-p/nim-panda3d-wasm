@@ -11,8 +11,10 @@ when defined(vcc):
     {.passL: "libpandaexpress.lib libpanda.lib libp3dtoolconfig.lib libp3dtool.lib".}
 
 else:
-  {.passL: "-lpandaexpress -lp3tinydisplay -lpanda -lp3dtoolconfig -lp3dtool".}
+  {.passL: "-lpandaexpress -lpanda -lp3dtoolconfig -lp3dtool".}
 
+when defined(static):
+  {.passL: "-lp3tinydisplay" .}
 
 const bitMaskPreamble = """
 #include "bitMask.h"

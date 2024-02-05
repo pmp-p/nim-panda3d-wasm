@@ -13,7 +13,7 @@ var
 
 proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
 
-proc init_base()=
+proc PyInit_base()=
     aspect2d = initNodePath(newPGTop("aspect2d"))
     render = initNodePath("render")
     render2d = initNodePath("render2d")
@@ -321,7 +321,7 @@ proc setupRender2d*(this: ShowBase) =
 
 
 proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()) =
-  init_base()
+  PyInit_base()
 
   this.makeAllPipes()
   this.graphicsEngine = GraphicsEngine.getGlobalPtr()
