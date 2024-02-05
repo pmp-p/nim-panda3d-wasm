@@ -4,12 +4,28 @@ import ../task
 import ./DirectObject
 import ./EventManagerGlobal
 import ./EventManager
-from ./Loader import loader
+from ./Loader import loader, init_Loader
 
-var aspect2d* = initNodePath(newPGTop("aspect2d"))
-var render* = initNodePath("render")
-var render2d* = initNodePath("render2d")
-aspect2d.reparentTo(render2d)
+var
+    aspect2d* : NodePath
+    render* : NodePath
+    render2d* : NodePath
+
+proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
+
+proc init_base()=
+    aspect2d = initNodePath(newPGTop("aspect2d"))
+    render = initNodePath("render")
+    render2d = initNodePath("render2d")
+
+    EventManagerGlobal.init_evmgr()
+    Loader.init_Loader()
+    init_libtinydisplay()
+    aspect2d.reparentTo(render2d)
+
+
+
+
 
 type
   ShowBase* = ref object of DirectObject
@@ -300,13 +316,20 @@ proc setupRender2d*(this: ShowBase) =
   this.a2dBottomLeft.setPos(this.a2dLeft, 0, this.a2dBottom)
   this.a2dBottomRight.setPos(this.a2dRight, 0, this.a2dBottom)
 
+
+
+
+
 proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()) =
+  init_base()
+
   this.makeAllPipes()
   this.graphicsEngine = GraphicsEngine.getGlobalPtr()
-
+  echo "310"
   eventMgr.restart()
+  echo "312"
   this.accept("window-event", proc (win: GraphicsWindow) = this.windowEvent(win))
-
+  echo "314"
   if this.windowType == "":
     this.windowType = "onscreen"
 
@@ -317,10 +340,10 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
     flags = 0x0804
   else:
     flags = 0x0800
-
+  echo "331"
   var fbprops: FrameBufferProperties = FrameBufferProperties.getDefault()
   this.win = this.graphicsEngine.makeOutput(this.pipe, "window", 0, fbprops, props, flags)
-
+  echo "334"
   this.taskMgr = taskMgr
   this.loader = Loader.loader
   this.render = render
@@ -331,32 +354,36 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
   this.camLens = this.camNode.getLens()
   this.cam = this.camera.attachNewNode(this.camNode)
   this.clock = ClockObject.getGlobalClock()
-
+  echo "345"
   dcast(ModelNode, this.camera.node()).setPreserveTransform(ModelNode.PTLocal)
-
+  echo "347"
   this.setupDataGraph()
-
+  echo "349"
   this.mouseInterface = this.trackball
   this.useTrackball()
-
+  echo "352"
   dcast(Transform2SG, this.mouse2cam.node()).setNode(this.camera.node())
-
+  echo "354"
   var dr = this.win.makeDisplayRegion()
   dr.setCamera(this.cam)
-
+  echo "357"
   this.setupRender2d()
-
+  echo "359"
   discard this.makeCamera2d(this.win)
-
-  taskMgr.add(proc (task: Task): auto = this.dataLoop(), "dataLoop", -50)
-  taskMgr.add(proc (task: Task): auto = this.ivalLoop(), "ivalLoop", 20)
-  taskMgr.add(proc (task: Task): auto = this.igLoop(), "igLoop", 50)
-  taskMgr.add(proc (task: Task): auto = this.audioLoop(), "audioLoop", 60)
-
+  echo "361"
+  if true:
+      taskMgr.add(proc (task: Task): auto = this.dataLoop(), "dataLoop", -50)
+      taskMgr.add(proc (task: Task): auto = this.ivalLoop(), "ivalLoop", 20)
+      taskMgr.add(proc (task: Task): auto = this.igLoop(), "igLoop", 50)
+  if false:
+      taskMgr.add(proc (task: Task): auto = this.audioLoop(), "audioLoop", 60)
+  echo "367"
   this.graphicsEngine.openWindows()
-
+  echo "369"
   if this.win.isOfType(GraphicsWindow.getClassType()):
+    echo "372"
     this.setupMouse(dcast(GraphicsWindow, this.win))
+    echo "374"
 
 proc openDefaultWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()): bool {.discardable.} =
   this.openMainWindow()
@@ -407,3 +434,7 @@ proc setFrameRateMeter*(this: ShowBase, flag: bool) =
 
 proc run*(this: ShowBase) =
   taskMgr.run()
+
+proc step*(this: ShowBase) =
+  eventMgr.doEvents()
+  AsyncTaskManager.getGlobalPtr().poll()

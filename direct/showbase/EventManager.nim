@@ -23,4 +23,7 @@ proc eventLoopTask(this: EventManager, task: Task): auto =
   Task.cont
 
 proc restart*(this: EventManager) =
-  taskMgr.add(proc (task: Task): auto = this.eventLoopTask(task), "eventManager")
+    echo "  26"
+    task.init_taskMgr()
+    taskMgr.add(proc (task: Task): auto = this.eventLoopTask(task), "eventManager")
+    echo "  29"

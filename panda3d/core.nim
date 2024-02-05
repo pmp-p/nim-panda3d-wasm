@@ -11,7 +11,8 @@ when defined(vcc):
     {.passL: "libpandaexpress.lib libpanda.lib libp3dtoolconfig.lib libp3dtool.lib".}
 
 else:
-  {.passL: "-lpandaexpress -lpanda -lp3dtoolconfig -lp3dtool".}
+  {.passL: "-lpandaexpress -lp3tinydisplay -lpanda -lp3dtoolconfig -lp3dtool".}
+
 
 const bitMaskPreamble = """
 #include "bitMask.h"
@@ -38592,3 +38593,5 @@ func wwwx*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w,
 func wwwy*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.y)
 func wwwz*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.z)
 func wwww*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.w)
+
+

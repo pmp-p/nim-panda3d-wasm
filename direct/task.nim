@@ -79,5 +79,16 @@ proc run*(this: TaskManager) =
   while this.running:
     this.mgr.poll()
 
-var taskMgr* = new(TaskManager)
-taskMgr.mgr = AsyncTaskManager.getGlobalPtr()
+var
+    taskMgr* :TaskManager
+
+proc init_taskMgr*()=
+    if taskMgr != nil:
+        echo "taskMgr: not null"
+    else:
+        echo "new taskMgr"
+        taskMgr = new(TaskManager)
+        taskMgr.mgr = AsyncTaskManager.getGlobalPtr()
+
+init_taskMgr()
+
