@@ -13,9 +13,6 @@ when defined(vcc):
 else:
   {.passL: "-lpandaexpress -lpanda -lp3dtoolconfig -lp3dtool".}
 
-when defined(static):
-  {.passL: "-lp3tinydisplay" .}
-
 const bitMaskPreamble = """
 #include "bitMask.h"
 typedef uint16_t uint16;
@@ -38595,5 +38592,3 @@ func wwwx*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w,
 func wwwy*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.y)
 func wwwz*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.z)
 func wwww*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.w)
-
-

@@ -18,7 +18,7 @@ echo fmt" ==== Panda3D: generic config {ARCH=} from {SDKROOT=} ===="
 --noCppExceptions
 --define:noCppExceptions
 --exceptions:quirky
---gc:orc
+--gc:refc
 --define:usemalloc
 --define:noSignalHandler
 
@@ -48,11 +48,14 @@ when defined(wasi):
 
     switch("passL","-lstdc++")
 
+
     # more compat but in the long term fix Panda3D instead
+    switch("passC", "-D_GNU_SOURCE -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID")
     switch("passL", "-lwasi-emulated-getpid -lwasi-emulated-mman -lwasi-emulated-signal -lwasi-emulated-process-clocks")
 
     # don't use _start/main but _initialize instead
     switch("passL", "-Wl,--export-all -mexec-model=reactor")
+    #switch("passL", "-lp3tinydisplay -lp3framework -lpandafx")
 
 
     # better debug but optionnal/tweakable
@@ -60,14 +63,16 @@ when defined(wasi):
     --opt:none
 else:
     echo fmt"  ===== Panda3D: native {ARCH} build ======"
+    switch("passL", "-lfreetype -lharfbuzz")
+    # -lfftw3 -lassimp")
 
+# static
+switch("passL", "-lp3tinydisplay")
+# common
+switch("passL", "-lc -lz")
 
 # only for script gen which does not pass cincludes
 # --passC:-I/opt/python-wasm-sdk/devices/${ARCH}/usr/include/panda3d
-
-
-# common
-switch("passL", "-lfreetype -lharfbuzz -lfftw3 -lc -lz")
 
 
 switch("nimcache", fmt"{SDKROOT}/nimsdk/cache.{ARCH}")

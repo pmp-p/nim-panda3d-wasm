@@ -55,8 +55,12 @@ proc spinCameraTask(task: Task): auto =
     return Task.cont
 
 
+when defined(static):
+    proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
+
 when defined(wasi):
     proc initialize(argc: cint, args: ptr UncheckedArray[cstring], env: ptr UncheckedArray[cstring]): int {.importc: "main".}
+
 
 proc setup() : void {.exportC:"setup".} =
     when defined(wasi):
@@ -66,6 +70,10 @@ proc setup() : void {.exportC:"setup".} =
 
     var
         cwd = getEnv("PWD","./")
+
+    when defined(static):
+        init_libtinydisplay()
+
 
     base = ShowBase()
 
@@ -77,9 +85,9 @@ proc setup() : void {.exportC:"setup".} =
     when defined(wasi):
         echo "hello wasi"
     else:
-        discard load_prc_file_data("", "load-display x11display")
-        discard load_prc_file_data("", "window-type offscreen")
-
+        #discard load_prc_file_data("", "load-display x11display")
+        #discard load_prc_file_data("", "window-type offscreen")
+        discard
 
     echo "setup:begin"
 
