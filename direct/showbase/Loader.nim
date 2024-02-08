@@ -35,4 +35,17 @@ proc loadMusic*(this: Loader, soundPath: string, positional: bool = false): Audi
     this.musicManager.setConcurrentSoundLimit(1)
   return this.loadSound(this.musicManager, soundPath, positional)
 
-var loader* = Loader()
+var loader* : Loader
+
+proc init_libpnmimagetypes(): void {.importc: "init_libpnmimagetypes" .} #, header: "config_pnmimagetypes.h".}
+
+proc init_Loader*()=
+    echo "  41"
+    if loader != nil:
+        echo "loader : not null"
+    else:
+        echo "new Loader"
+        init_libpnmimagetypes()
+        loader = Loader()
+    echo "  47"
+

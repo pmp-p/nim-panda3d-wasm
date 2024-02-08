@@ -60,7 +60,7 @@ type
     mgr: AsyncTaskManager
     running: bool
 
-proc add*(this: TaskManager, function: (proc(task: Task): DoneStatus), name: string, sort: int = 0) : AsyncTask {.discardable.} =
+proc add*(this: TaskManager, function: (proc(task: Task): int), name: string, sort: int = 0) : AsyncTask {.discardable.} =
   var procp = rawProc(function);
   var envp = rawEnv(function);
   if envp != nil:
@@ -79,5 +79,20 @@ proc run*(this: TaskManager) =
   while this.running:
     this.mgr.poll()
 
-var taskMgr* = new(TaskManager)
-taskMgr.mgr = AsyncTaskManager.getGlobalPtr()
+var
+    taskMgr* :TaskManager
+
+proc init_taskMgr*()=
+    if taskMgr != nil:
+        echo "  87:taskMgr: not null"
+    else:
+        echo "  87:new taskMgr <<<<<<<===== "
+        taskMgr = new(TaskManager)
+    if taskMgr.mgr != nil:
+        echo "  87:taskMgr.mgr: not null"
+    else:
+        echo "  87:new taskMgr.mgr <<<<<<<===== "
+        taskMgr.mgr = AsyncTaskManager.getGlobalPtr()
+
+init_taskMgr()
+

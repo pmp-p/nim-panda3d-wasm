@@ -1,5 +1,11 @@
-import ../../panda3d/core
+import std/os # getEnv
 import std/tables
+import ../../panda3d/core
+
+type
+    t_callback* = proc (args: openArray[EventParameter]) : void {.gcsafe.}
+    t_slot =  Table[int, t_callback]
+    t_callbacks = Table[string, t_slot]
 
 type
   DirectObject* = ref object of RootObj
@@ -7,25 +13,49 @@ type
 
 type
   Messenger* = ref object of RootObj
-    callbacks: Table[string, Table[int, proc (args: openArray[EventParameter])]]
+    callbacks: t_callbacks
 
 var nextMessengerId = 1
 
-proc accept*(this: Messenger, event: string, obj: DirectObject, function: proc ()) =
-  var acceptorDict = addr this.callbacks.mgetOrPut(event, Table[int, proc (args: openArray[EventParameter])]())
-  if obj.messengerId == 0:
-    obj.messengerId = nextMessengerId
-    nextMessengerId += 1
+var
+    #elem : t_slot
+    elem = initTable[int, t_callback]()
+    cb = initTable[string, t_slot]()
 
-  acceptorDict[][obj.messengerId] = (proc(args: openArray[EventParameter]) = function())
+proc accept*(this: Messenger, event: string, obj: DirectObject, function: t_callback) =
+    if obj.messengerId == 0:
+        obj.messengerId = nextMessengerId
+        nextMessengerId += 1
+
+    # alloc something dynamic
+    let cwd = getEnv("PWD","./")
+
+    let intkey:int = obj.messengerId
+
+
+    echo " ----------------- crash here ----------------------"
+    #elem = initTable[int, t_callback]()
+
+    echo "---- 1 -----"
+    var nouse = elem.mgetOrPut(intkey, function)
+
+    echo "---- 2 -----"
+    discard cb.mgetOrPut(event, elem)
+
+    #this.callbacks[event] = telem
+    # this.callbacks
+    echo "---- 3 -----"
+    this.callbacks[event] = cb[event]
+    echo " ----------------- or not ----------------------"
+    #acceptorDict[][obj.messengerId] = cast[t_callback](function)
 
 proc accept*[T](this: Messenger, event: string, obj: DirectObject, function: proc (param: T)) =
-  var acceptorDict = addr this.callbacks.mgetOrPut(event, Table[int, proc (args: openArray[EventParameter])]())
+  var acceptorDict = addr this.callbacks.mgetOrPut(event, Table[int, t_callback]())
   if obj.messengerId == 0:
     obj.messengerId = nextMessengerId
     nextMessengerId += 1
 
-  acceptorDict[][obj.messengerId] = (proc(args: openArray[EventParameter]) = function(T.dcast(args[0].getPtr())))
+  acceptorDict[][obj.messengerId] = (t_callback = function(T.dcast(args[0].getPtr())))
 
 proc ignore*(this: Messenger, event: string, obj: DirectObject) =
   if obj.messengerId == 0:

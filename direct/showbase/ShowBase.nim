@@ -4,12 +4,38 @@ import ../task
 import ./DirectObject
 import ./EventManagerGlobal
 import ./EventManager
-from ./Loader import loader
+from ./Loader import loader, init_Loader
 
-var aspect2d* = initNodePath(newPGTop("aspect2d"))
-var render* = initNodePath("render")
-var render2d* = initNodePath("render2d")
-aspect2d.reparentTo(render2d)
+import ./Messenger
+
+
+var
+    PyInit_base_done : bool = false
+    aspect2d* : NodePath
+    render* : NodePath
+    render2d* : NodePath
+
+proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
+
+proc PyInit_base()=
+    echo "  18:begin // PyInit_base"
+    if PyInit_base_done:
+        echo "  18:PyInit_base already called"
+    else:
+        echo "  18:PyInit_base"
+        PyInit_base_done = true
+        aspect2d = initNodePath(newPGTop("aspect2d"))
+        render = initNodePath("render")
+        render2d = initNodePath("render2d")
+
+        EventManagerGlobal.init_evmgr()
+        Loader.init_Loader()
+        init_libtinydisplay()
+        aspect2d.reparentTo(render2d)
+    echo "  18:end // PyInit_base"
+
+
+
 
 type
   ShowBase* = ref object of DirectObject
@@ -300,12 +326,29 @@ proc setupRender2d*(this: ShowBase) =
   this.a2dBottomLeft.setPos(this.a2dLeft, 0, this.a2dBottom)
   this.a2dBottomRight.setPos(this.a2dRight, 0, this.a2dBottom)
 
+
+
+var
+    hold_base : ShowBase
+    fbprops: FrameBufferProperties
+
+proc evgen(args: openArray[EventParameter]) : void =
+    # win: GraphicsWindow
+    # hold_base.windowEvent(win)
+    echo "@@@@@@@@@ window-event accepted evgen"
+    discard
+
+proc t_tasks(task: Task) : AsyncTask_DoneStatus =
+    return AsyncTask_DoneStatus.DS_cont
+#    return AsyncTask_DoneStatus(AsyncTask_DoneStatus.DS_cont)
+
+
 proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()) =
+  echo "336:begin // openMainWindow"
+  PyInit_base()
+  hold_base= this
   this.makeAllPipes()
   this.graphicsEngine = GraphicsEngine.getGlobalPtr()
-
-  eventMgr.restart()
-  this.accept("window-event", proc (win: GraphicsWindow) = this.windowEvent(win))
 
   if this.windowType == "":
     this.windowType = "onscreen"
@@ -317,10 +360,11 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
     flags = 0x0804
   else:
     flags = 0x0800
-
-  var fbprops: FrameBufferProperties = FrameBufferProperties.getDefault()
+  echo "352"
+  fbprops = FrameBufferProperties.getDefault()
+  echo "355"
   this.win = this.graphicsEngine.makeOutput(this.pipe, "window", 0, fbprops, props, flags)
-
+  echo "357"
   this.taskMgr = taskMgr
   this.loader = Loader.loader
   this.render = render
@@ -331,32 +375,46 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
   this.camLens = this.camNode.getLens()
   this.cam = this.camera.attachNewNode(this.camNode)
   this.clock = ClockObject.getGlobalClock()
+  echo "366"
 
   dcast(ModelNode, this.camera.node()).setPreserveTransform(ModelNode.PTLocal)
 
   this.setupDataGraph()
-
   this.mouseInterface = this.trackball
   this.useTrackball()
-
   dcast(Transform2SG, this.mouse2cam.node()).setNode(this.camera.node())
-
   var dr = this.win.makeDisplayRegion()
   dr.setCamera(this.cam)
 
+  this.graphicsEngine.openWindows()
+  discard this.makeCamera2d(this.win)
   this.setupRender2d()
 
-  discard this.makeCamera2d(this.win)
+  eventMgr.restart()
 
-  taskMgr.add(proc (task: Task): auto = this.dataLoop(), "dataLoop", -50)
-  taskMgr.add(proc (task: Task): auto = this.ivalLoop(), "ivalLoop", 20)
-  taskMgr.add(proc (task: Task): auto = this.igLoop(), "igLoop", 50)
-  taskMgr.add(proc (task: Task): auto = this.audioLoop(), "audioLoop", 60)
+  when defined(wasi):
+    echo "@@@@ CRASH ON WASI orc/arc this.accept('window-event', closure) @@@@@"
+    this.accept("window-event",  evgen)
+  else:
+    #this.accept("window-event", proc (win: GraphicsWindow) = this.windowEvent(win))
+    this.accept("window-event", evgen)
 
-  this.graphicsEngine.openWindows()
-
+  echo "400"
+  # taskMgr.add(proc (task: Task): auto = this.dataLoop(), "dataLoop", -50)
+  # taskMgr.add(t_tasks, "tasks", -50)
+  if false:
+      #taskMgr.add(t_dataLoop, "dataLoop", -50)
+      #taskMgr.add(proc (task: Task): auto = this.ivalLoop(), "ivalLoop", 20)
+      #taskMgr.add(proc (task: Task): auto = this.igLoop(), "igLoop", 50)
+      discard
+  if false:
+      #taskMgr.add(proc (task: Task): auto = this.audioLoop(), "audioLoop", 60)
+      discard
+  echo "394"
   if this.win.isOfType(GraphicsWindow.getClassType()):
+    echo "372"
     this.setupMouse(dcast(GraphicsWindow, this.win))
+  echo "398: end // openMainWindow"
 
 proc openDefaultWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()): bool {.discardable.} =
   this.openMainWindow()
@@ -405,5 +463,15 @@ proc setFrameRateMeter*(this: ShowBase, flag: bool) =
       this.frameRateMeter.clearWindow()
       this.frameRateMeter = toFrameRateMeter(nil)
 
+proc step*(this: ShowBase) =
+    eventMgr.doEvents()
+    discard hold_base.dataLoop()
+    discard hold_base.igLoop()
+    #discard hold_base.audioLoop()
+    AsyncTaskManager.getGlobalPtr().poll()
+
+
 proc run*(this: ShowBase) =
   taskMgr.run()
+
+PyInit_base()

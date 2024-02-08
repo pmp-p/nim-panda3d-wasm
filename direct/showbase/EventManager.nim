@@ -20,7 +20,23 @@ proc doEvents*(this: EventManager) =
 
 proc eventLoopTask(this: EventManager, task: Task): auto =
   this.doEvents()
-  Task.cont
+  return Task.cont
+
+var
+    hold_evmgr : EventManager
+
+proc evltask*(task: Task): int =
+    return 1
 
 proc restart*(this: EventManager) =
-  taskMgr.add(proc (task: Task): auto = this.eventLoopTask(task), "eventManager")
+    echo "  26:begin // EventManager"
+    task.init_taskMgr()
+    echo "  26:taskMgr.add"
+    hold_evmgr = this
+    when defined(wasi):
+        echo "@@@@@@@@@ SKIPPING taskMgr.add(evltask, 'eventManager') @@@@@@@@"
+    else:
+        taskMgr.add(evltask, "eventManager")
+
+    echo "  26:end // EventManager"
+

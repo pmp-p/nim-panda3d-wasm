@@ -13,6 +13,9 @@ when defined(vcc):
 else:
   {.passL: "-lpandaexpress -lpanda -lp3dtoolconfig -lp3dtool".}
 
+when defined(static):
+  {.passL: "-lp3tinydisplay" .}
+
 const bitMaskPreamble = """
 #include "bitMask.h"
 typedef uint16_t uint16;
@@ -1771,7 +1774,7 @@ converter upcastToNamable*(_: typedesc[AsyncTask]): typedesc[Namable] = typedesc
 converter toAsyncTask*(_: type(nil)): AsyncTask {.importcpp: "(nullptr)".}
 func dcast*(_: typedesc[AsyncTask], obj: TypedObject): AsyncTask {.importcpp: "DCAST(AsyncTask, @)".}
 
-type AsyncTask_DoneStatus {.importcpp: "AsyncTask::DoneStatus", pure, header: "asyncTask.h".} = enum
+type AsyncTask_DoneStatus* {.importcpp: "AsyncTask::DoneStatus", pure, header: "asyncTask.h".} = enum
   DS_done = 0
   DS_cont = 1
   DS_again = 2
@@ -38592,3 +38595,5 @@ func wwwx*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w,
 func wwwy*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.y)
 func wwwz*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.z)
 func wwww*(this: LPoint4i): LPoint4i = LPoint4i(x: this.w, y: this.w, z: this.w, w: this.w)
+
+
