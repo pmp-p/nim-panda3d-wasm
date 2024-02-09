@@ -1,4 +1,3 @@
-import std/os # getEnv
 import std/tables
 import ../../panda3d/core
 
@@ -18,7 +17,6 @@ type
 var nextMessengerId = 1
 
 var
-    #elem : t_slot
     elem = initTable[int, t_callback]()
     cb = initTable[string, t_slot]()
 
@@ -27,11 +25,7 @@ proc accept*(this: Messenger, event: string, obj: DirectObject, function: t_call
         obj.messengerId = nextMessengerId
         nextMessengerId += 1
 
-    # alloc something dynamic
-    let cwd = getEnv("PWD","./")
-
     let intkey:int = obj.messengerId
-
 
     echo " ----------------- crash here ----------------------"
     #elem = initTable[int, t_callback]()

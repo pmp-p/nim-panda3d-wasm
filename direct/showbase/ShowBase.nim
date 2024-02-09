@@ -28,7 +28,7 @@ proc PyInit_base()=
         render = initNodePath("render")
         render2d = initNodePath("render2d")
 
-        EventManagerGlobal.init_evmgr()
+        #EventManagerGlobal.init_evmgr()
         Loader.init_Loader()
         init_libtinydisplay()
         aspect2d.reparentTo(render2d)
@@ -338,9 +338,9 @@ proc evgen(args: openArray[EventParameter]) : void =
     echo "@@@@@@@@@ window-event accepted evgen"
     discard
 
-proc t_tasks(task: Task) : AsyncTask_DoneStatus =
-    return AsyncTask_DoneStatus.DS_cont
-#    return AsyncTask_DoneStatus(AsyncTask_DoneStatus.DS_cont)
+proc t_tasks(task: AsyncTask) : int =
+    echo "@@@@@ t_tasks @@@@@@"
+    return 1 #AsyncTask_DoneStatus.DS_cont
 
 
 proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()) =

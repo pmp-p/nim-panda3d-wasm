@@ -18,25 +18,10 @@ proc doEvents*(this: EventManager) =
 
     messenger.send(event.name, parameters)
 
-proc eventLoopTask(this: EventManager, task: Task): auto =
-  this.doEvents()
-  return Task.cont
-
-var
-    hold_evmgr : EventManager
-
-proc evltask*(task: Task): int =
-    return 1
+#proc eventLoopTask(this: EventManager, task: Task): auto =
+#  this.doEvents()
+#  Task.cont
 
 proc restart*(this: EventManager) =
-    echo "  26:begin // EventManager"
-    task.init_taskMgr()
-    echo "  26:taskMgr.add"
-    hold_evmgr = this
-    when defined(wasi):
-        echo "@@@@@@@@@ SKIPPING taskMgr.add(evltask, 'eventManager') @@@@@@@@"
-    else:
-        taskMgr.add(evltask, "eventManager")
-
-    echo "  26:end // EventManager"
-
+  #taskMgr.add(proc (task: Task): auto = this.eventLoopTask(task), "eventManager")
+  discard

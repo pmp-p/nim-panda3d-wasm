@@ -55,7 +55,6 @@ when defined(wasi):
 
     # don't use _start/main but _initialize instead
     switch("passL", "-Wl,--export-all -mexec-model=reactor")
-    #switch("passL", "-lp3tinydisplay -lp3framework -lpandafx")
 
 
     # better debug but optionnal/tweakable
