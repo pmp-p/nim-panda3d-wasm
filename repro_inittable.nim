@@ -1,14 +1,10 @@
-import std/os # getEnv
-import std/strformat
 import std/tables
 
-
 var
-    # {.gcsafe, nimcall.}
-
-    # initTable will crash
-
-    table = initTable[string, Table[int, proc (args: openArray[string]) : void] ]()
+    # initTable will crash on wasi
+    table = initTable[string, Table[int, proc () : void] ]()
+    # this will not
+    # table : Table[string, Table[int, proc () : void] ]
 
 
 when defined(wasi):
@@ -19,19 +15,14 @@ proc setup() : void {.exportC:"setup".} =
     when defined(wasi):
         echo "_initialized"
         discard initialize(0,nil,nil)
-
-    # alloc something dynamic
-    # var cwd = getEnv("PWD","./")
-
     var
-        tcb : Table[int, proc (args: openArray[string]) : void]
-
+        tcb : Table[int, proc () : void]
     echo "begin"
-    tcb[1] = proc(args: openArray[string]) = discard
-
+    tcb[1] = proc() = discard
     var notused = table.mGetOrPut("hmm" , tcb )
-    #echo fmt"{notused}"
     echo "end"
+
+    # CRASH HERE
 
 when not defined(wasi):
     setup()
