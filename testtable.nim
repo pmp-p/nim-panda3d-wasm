@@ -5,7 +5,7 @@ when defined(wasi):
     proc initialize(argc: cint, args: ptr UncheckedArray[cstring], env: ptr UncheckedArray[cstring]): int {.importc: "main".}
 
 type
-    t_callback* = proc (args: openArray[string]) : void {.gcsafe.}
+    t_callback* = proc (args: openArray[string]) : void  # {.gcsafe, nimcall.} needed for initTable
     t_slot = Table[int, t_callback]
     t_callbacks = Table[string, t_slot]
 
@@ -13,11 +13,9 @@ type
 proc proc_cb(args: openArray[string]) : void =
     echo "cb"
 
-var cb = initTable[string, t_slot]()
-
-when defined(nobug):
-    var elem : t_slot
-
+#
+var cb  : t_callbacks # = t_callbacks() # <= OK on wasi
+#var cb : t_callbacks = initTable[string, t_slot]()  # <=== crash on wasi exit [SOMETIMES] when not using {.gcsafe, nimcall.}
 
 proc setup() : void {.exportC:"setup".} =
     when defined(wasi):
@@ -28,18 +26,18 @@ proc setup() : void {.exportC:"setup".} =
     # alloc something dynamic
     let cwd = getEnv("PWD","./")
 
-    when not defined(nobug):
-        var elem = initTable[int, t_callback]()
-    else:
-        elem = initTable[int, t_callback]()
+    echo "TEST_TABLE"
+
+    var elem : t_slot = t_slot() #
+    #var elem : t_slot = initTable[int, t_callback]()
 
     var intkey:int = 1
     var fnptr = elem.mgetOrPut( intkey , proc_cb )
 
     discard cb.mgetOrPut("string", elem )
-
     echo "setup:end"
 
 when not defined(wasi):
     setup()
+
 # else call with "wasmtime --dir / --invoke setup a.out.wasm"

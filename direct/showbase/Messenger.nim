@@ -2,13 +2,14 @@ import std/tables
 import ../../panda3d/core
 
 type
-    t_callback* = proc (args: openArray[EventParameter]) : void {.gcsafe.}
-    t_slot =  Table[int, t_callback]
-    t_callbacks = Table[string, t_slot]
-
-type
   DirectObject* = ref object of RootObj
     messengerId: int
+
+
+type
+    t_callback* = proc (args: openArray[EventParameter]) : void {.gcsafe, nimcall.}
+    t_slots =  Table[int, t_callback]
+    t_callbacks = Table[string, t_slots]
 
 type
   Messenger* = ref object of RootObj
@@ -17,29 +18,23 @@ type
 var nextMessengerId = 1
 
 var
-    elem = initTable[int, t_callback]()
-    cb = initTable[string, t_slot]()
+    elem : t_slots # = t_slots() #initTable[int, t_callback]()
+    cb : t_callbacks # = initTable[string, t_slots]()
 
-proc accept*(this: Messenger, event: string, obj: DirectObject, function: t_callback) =
+proc accept*(this: Messenger, event: string, obj: DirectObject, function: t_callback) {.gcsafe, nimcall.} =
     if obj.messengerId == 0:
         obj.messengerId = nextMessengerId
         nextMessengerId += 1
 
     let intkey:int = obj.messengerId
 
-    echo " ----------------- crash here ----------------------"
-    #elem = initTable[int, t_callback]()
-
+    echo " ----------------- crash here with orc/arc ----------------------"
     echo "---- 1 -----"
     var nouse = elem.mgetOrPut(intkey, function)
-
     echo "---- 2 -----"
     discard cb.mgetOrPut(event, elem)
-
-    #this.callbacks[event] = telem
-    # this.callbacks
     echo "---- 3 -----"
-    this.callbacks[event] = cb[event]
+    this.callbacks[event] = cb[event] # ORC infinite loop
     echo " ----------------- or not ----------------------"
     #acceptorDict[][obj.messengerId] = cast[t_callback](function)
 

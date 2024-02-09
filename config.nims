@@ -18,7 +18,7 @@ echo fmt" ==== Panda3D: generic config {ARCH=} from {SDKROOT=} ===="
 --noCppExceptions
 --define:noCppExceptions
 --exceptions:quirky
---gc:refc
+--gc:orc
 --define:usemalloc
 --define:noSignalHandler
 
