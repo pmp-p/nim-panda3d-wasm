@@ -13,6 +13,8 @@ rm -v out.*
 ARCH=$(arch)
 EXE=out.${ARCH}
 
+mkdir -p ${SDKROOT}/src
+
 if ${CI:-false}
 then
     echo "skipping native build"
