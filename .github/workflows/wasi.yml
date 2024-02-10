@@ -5,7 +5,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 20.0.1
+        SDK_VERSION: 20.0.2
         SDK_ARCHIVE: python3.12-wasi-sdk-Ubuntu-22.04.tar.lz4
         SDKROOT: /opt/python-wasm-sdk
         SYS_PYTHON: /usr/bin/python3
