@@ -42,6 +42,9 @@ when defined(wasi):
     --define:emscripten
     --define:static
 
+    # component model aka reactor
+    --noMain
+
     --cpu:wasm32
     switch("clibdir", fmt"{SDKROOT}/devices/{ARCH}/usr/lib/wasm32-wasi")
     switch("passC", fmt"-m32 -mllvm -inline-threshold=1 -O0 -g3 -Djmp_buf=int")

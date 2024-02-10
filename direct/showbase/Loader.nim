@@ -37,15 +37,14 @@ proc loadMusic*(this: Loader, soundPath: string, positional: bool = false): Audi
 
 var loader* : Loader
 
-proc init_libpnmimagetypes(): void {.importc: "init_libpnmimagetypes" .} #, header: "config_pnmimagetypes.h".}
+when defined(static):
+    proc init_libpnmimagetypes(): void {.importc: "init_libpnmimagetypes" .}
 
-proc init_Loader*()=
-    echo "  41"
+proc PyInit_Loader*()=
     if loader != nil:
-        echo "loader : not null"
+        echo "Loader.loader : not null"
     else:
-        echo "new Loader"
-        init_libpnmimagetypes()
+        when defined(static):
+            init_libpnmimagetypes()
         loader = Loader()
-    echo "  47"
 

@@ -5,7 +5,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 20.0.0
+        SDK_VERSION: 20.0.1
         SDK_ARCHIVE: python3.12-wasi-sdk-Ubuntu-22.04.tar.lz4
         SDKROOT: /opt/python-wasm-sdk
         SYS_PYTHON: /usr/bin/python3
@@ -20,14 +20,9 @@ jobs:
         sudo apt-get install -y lz4 wget pv bash
         echo https://github.com/pygame-web/python-wasi-sdk/releases/download/$SDK_VERSION/$SDK_ARCHIVE
         curl -sL --retry 5 https://github.com/pygame-web/python-wasi-sdk/releases/download/$SDK_VERSION/$SDK_ARCHIVE | tar xvP --use-compress-program=lz4 | pv -p -l -s 11200 >/dev/null
-        curl https://wasmtime.dev/install.sh -sSf | bash
-        mkdir -p /opt/python-wasm-sdk/wasisdk/bin
-        mv -vf $(find $HOME/|grep /wasmtime$) /opt/python-wasm-sdk/wasisdk/bin/
       working-directory: /
 
     - name: Build WASM with wasi-sdk
       run: |
-        mkdir build-wasi
-        chmod +x *.sh
         bash build.sh testwasi.nim
 

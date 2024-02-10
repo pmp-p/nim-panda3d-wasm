@@ -4,10 +4,14 @@ import ../task
 import ./DirectObject
 import ./EventManagerGlobal
 import ./EventManager
-from ./Loader import loader, init_Loader
+from ./Loader import loader, PyInit_Loader
 
 import ./Messenger
 
+# DO NOT INIT SHOWBASE GLOBALS HERE, use PyInit_base from wasm ctor
+
+when defined(static):
+    proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
 
 var
     PyInit_base_done : bool = false
@@ -15,26 +19,25 @@ var
     render* : NodePath
     render2d* : NodePath
 
-proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
-
-proc PyInit_base()=
+proc PyInit_base*():void=
     echo "  18:begin // PyInit_base"
     if PyInit_base_done:
         echo "  18:PyInit_base already called"
     else:
         echo "  18:PyInit_base"
+        when defined(static):
+            init_libtinydisplay()
+            discard
+
         PyInit_base_done = true
         aspect2d = initNodePath(newPGTop("aspect2d"))
         render = initNodePath("render")
         render2d = initNodePath("render2d")
 
-        #EventManagerGlobal.init_evmgr()
-        Loader.init_Loader()
-        init_libtinydisplay()
+        Loader.PyInit_Loader()
+
         aspect2d.reparentTo(render2d)
     echo "  18:end // PyInit_base"
-
-
 
 
 type
@@ -344,8 +347,8 @@ proc t_tasks(task: AsyncTask) : int =
 
 
 proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()) =
-  echo "336:begin // openMainWindow"
-  PyInit_base()
+  echo "346:begin // openMainWindow"
+
   hold_base= this
   this.makeAllPipes()
   this.graphicsEngine = GraphicsEngine.getGlobalPtr()
@@ -360,11 +363,11 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
     flags = 0x0804
   else:
     flags = 0x0800
-  echo "352"
+
   fbprops = FrameBufferProperties.getDefault()
-  echo "355"
+
   this.win = this.graphicsEngine.makeOutput(this.pipe, "window", 0, fbprops, props, flags)
-  echo "357"
+
   this.taskMgr = taskMgr
   this.loader = Loader.loader
   this.render = render
@@ -375,7 +378,6 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
   this.camLens = this.camNode.getLens()
   this.cam = this.camera.attachNewNode(this.camNode)
   this.clock = ClockObject.getGlobalClock()
-  echo "366"
 
   dcast(ModelNode, this.camera.node()).setPreserveTransform(ModelNode.PTLocal)
 
@@ -392,29 +394,16 @@ proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.
 
   eventMgr.restart()
 
-  when defined(wasi):
-    echo "@@@@ CRASH ON WASI orc/arc this.accept('window-event', closure) @@@@@"
-    this.accept("window-event",  evgen)
-  else:
-    #this.accept("window-event", proc (win: GraphicsWindow) = this.windowEvent(win))
-    this.accept("window-event", evgen)
+  this.accept("window-event", evgen)
 
-  echo "400"
   # taskMgr.add(proc (task: Task): auto = this.dataLoop(), "dataLoop", -50)
-  # taskMgr.add(t_tasks, "tasks", -50)
-  if false:
-      #taskMgr.add(t_dataLoop, "dataLoop", -50)
-      #taskMgr.add(proc (task: Task): auto = this.ivalLoop(), "ivalLoop", 20)
-      #taskMgr.add(proc (task: Task): auto = this.igLoop(), "igLoop", 50)
-      discard
-  if false:
-      #taskMgr.add(proc (task: Task): auto = this.audioLoop(), "audioLoop", 60)
-      discard
-  echo "394"
+  # taskMgr.add(proc (task: Task): auto = this.ivalLoop(), "ivalLoop", 20)
+  # taskMgr.add(proc (task: Task): auto = this.igLoop(), "igLoop", 50)
+  # taskMgr.add(proc (task: Task): auto = this.audioLoop(), "audioLoop", 60)
+
   if this.win.isOfType(GraphicsWindow.getClassType()):
-    echo "372"
     this.setupMouse(dcast(GraphicsWindow, this.win))
-  echo "398: end // openMainWindow"
+  echo "346: end // openMainWindow"
 
 proc openDefaultWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()): bool {.discardable.} =
   this.openMainWindow()
@@ -466,6 +455,7 @@ proc setFrameRateMeter*(this: ShowBase, flag: bool) =
 proc step*(this: ShowBase) =
     eventMgr.doEvents()
     discard hold_base.dataLoop()
+    discard hold_base.ivalLoop()
     discard hold_base.igLoop()
     #discard hold_base.audioLoop()
     AsyncTaskManager.getGlobalPtr().poll()
@@ -474,4 +464,6 @@ proc step*(this: ShowBase) =
 proc run*(this: ShowBase) =
   taskMgr.run()
 
-PyInit_base()
+
+# DO NOT INIT SHOWBASE GLOBALS HERE
+

@@ -1,3 +1,4 @@
+import std/strformat
 import std/tables
 
 var
@@ -7,14 +8,8 @@ var
     # table : Table[string, Table[int, proc () : void] ]
 
 
-when defined(wasi):
-    proc initialize(argc: cint, args: ptr UncheckedArray[cstring], env: ptr UncheckedArray[cstring]): int {.importc: "main".}
+proc renderAnimationFrame() : void {.exportC.} =
 
-
-proc setup() : void {.exportC:"setup".} =
-    when defined(wasi):
-        echo "_initialized"
-        discard initialize(0,nil,nil)
     var
         tcb : Table[int, proc () : void]
     echo "begin"
@@ -25,4 +20,12 @@ proc setup() : void {.exportC:"setup".} =
     # CRASH HERE
 
 when not defined(wasi):
-    setup()
+    echo "native"
+    while true:
+        renderAnimationFrame()
+else:
+    echo "wasi"
+    proc NimMain(): void {.cdecl, importc.}
+    {.pragma: constructor, codegenDecl: "__attribute__((constructor)) $# $#$#", exportc.}
+    proc wasm_call_ctors() {.exportc, constructor, cdecl.} = NimMain()
+

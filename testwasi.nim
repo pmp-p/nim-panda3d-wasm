@@ -54,28 +54,33 @@ proc spinCameraTask(task: Task): auto =
     spin_cam(task.time)
     return Task.cont
 
+proc init() : void
+
+proc NimMain(): void {.cdecl, importc.}
 
 when defined(static):
     proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
 
-when defined(wasi):
-    proc initialize(argc: cint, args: ptr UncheckedArray[cstring], env: ptr UncheckedArray[cstring]): int {.importc: "main".}
+{.pragma: constructor, codegenDecl: "__attribute__((constructor)) $# $#$#", exportc.}
 
 
-proc setup() : void {.exportC:"setup".} =
-    when defined(wasi):
-        discard initialize(0, nil,nil)
-        echo "_initialized"
-        discard
+when defined(tryctor):
+    proc wasm_call_ctors() {.exportc, constructor, cdecl.} = NimMain()
+    discard
+
+
+proc renderAnimationFrame() : void {.exportc.} =
+    if base != nil:
+        echo "\n @@@@@@@@@@@ ctor was called   @@@@@ \n"
+    else:
+        when defined(wasi) and not defined(tryctor):
+            NimMain()
+            echo "\n   @@@@@@@@@@ NimMain/noctor @@@@@@@@@@@ \n"
+        init()
 
     var
         cwd = getEnv("PWD","./")
 
-    when defined(static):
-        init_libtinydisplay()
-
-
-    base = ShowBase()
 
     echo fmt"Work Directory : {cwd}"
 
@@ -171,7 +176,18 @@ proc setup() : void {.exportC:"setup".} =
 
     echo "setup:end"
 
-when not defined(wasi):
-    echo "native"
-    setup()
+proc init() : void =
+    when defined(static):
+        #init_libtinydisplay()
+        discard
+
+    PyInit_base()
+    base = ShowBase()
+
+    when not defined(wasi):
+        echo "native"
+        renderAnimationFrame()
+
+
+init()
 

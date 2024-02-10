@@ -7,7 +7,7 @@ type
 
 
 type
-    t_callback* = proc (args: openArray[EventParameter]) : void {.gcsafe, nimcall.}
+    t_callback* = proc (args: openArray[EventParameter]) : void
     t_slots =  Table[int, t_callback]
     t_callbacks = Table[string, t_slots]
 
@@ -18,25 +18,16 @@ type
 var nextMessengerId = 1
 
 var
-    elem : t_slots # = t_slots() #initTable[int, t_callback]()
-    cb : t_callbacks # = initTable[string, t_slots]()
+    elem : t_slots
+    #elem = initTable[int, t_callback]()
 
-proc accept*(this: Messenger, event: string, obj: DirectObject, function: t_callback) {.gcsafe, nimcall.} =
+proc accept*(this: Messenger, event: string, obj: DirectObject, function: t_callback) =
     if obj.messengerId == 0:
         obj.messengerId = nextMessengerId
         nextMessengerId += 1
+    elem[obj.messengerId] = function
+    this.callbacks[event] = elem
 
-    let intkey:int = obj.messengerId
-
-    echo " ----------------- crash here with orc/arc ----------------------"
-    echo "---- 1 -----"
-    var nouse = elem.mgetOrPut(intkey, function)
-    echo "---- 2 -----"
-    discard cb.mgetOrPut(event, elem)
-    echo "---- 3 -----"
-    this.callbacks[event] = cb[event] # ORC infinite loop
-    echo " ----------------- or not ----------------------"
-    #acceptorDict[][obj.messengerId] = cast[t_callback](function)
 
 proc accept*[T](this: Messenger, event: string, obj: DirectObject, function: proc (param: T)) =
   var acceptorDict = addr this.callbacks.mgetOrPut(event, Table[int, t_callback]())
