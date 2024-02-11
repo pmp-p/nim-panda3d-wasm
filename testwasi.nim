@@ -32,7 +32,7 @@ import direct/actor
 import direct/interval
 
 
-import piny/print
+# import piny/print
 
 template pass*: untyped = discard
 
@@ -116,7 +116,7 @@ proc loop(): void {.exportc.} =
     echo "\n\n\n\n       =============== LOOP ZONE ===============     "
 
 
-    print("\n\nbase.openDefaultWindow")
+    echo "base.openDefaultWindow")
     base.open_default_window()
 
     echo "base.disableMouse"
