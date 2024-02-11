@@ -115,8 +115,7 @@ proc loop(): void {.exportc.} =
 
     echo "\n\n\n\n       =============== LOOP ZONE ===============     "
 
-
-    echo "base.openDefaultWindow")
+    echo "base.openDefaultWindow"
     base.open_default_window()
 
     echo "base.disableMouse"
