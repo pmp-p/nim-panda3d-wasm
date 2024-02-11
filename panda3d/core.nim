@@ -1771,7 +1771,7 @@ converter upcastToNamable*(_: typedesc[AsyncTask]): typedesc[Namable] = typedesc
 converter toAsyncTask*(_: type(nil)): AsyncTask {.importcpp: "(nullptr)".}
 func dcast*(_: typedesc[AsyncTask], obj: TypedObject): AsyncTask {.importcpp: "DCAST(AsyncTask, @)".}
 
-type AsyncTask_DoneStatus* {.importcpp: "AsyncTask::DoneStatus", pure, header: "asyncTask.h".} = enum
+type AsyncTask_DoneStatus {.importcpp: "AsyncTask::DoneStatus", pure, header: "asyncTask.h".} = enum
   DS_done = 0
   DS_cont = 1
   DS_again = 2

@@ -1,3 +1,6 @@
+import std/os # getEnv
+import std/strformat  # fmt
+
 import ../../panda3d/core
 import ../../panda3d/direct
 import ../task
@@ -11,7 +14,8 @@ import ./Messenger
 # DO NOT INIT SHOWBASE GLOBALS HERE, use PyInit_base from wasm ctor
 
 when defined(static):
-    proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
+    proc init_libtinydisplay(): void {.importc: "init_libtinydisplay", header: "config_tinydisplay.h".}
+
 
 var
     PyInit_base_done : bool = false
@@ -83,6 +87,10 @@ type
     win*: GraphicsOutput
     windowType*: string
     wireframeEnabled*: bool
+
+var
+    i_ShowBase : ShowBase
+    fbprops: FrameBufferProperties
 
 proc makeDefaultPipe*(this: ShowBase) =
   var selection = GraphicsPipeSelection.getGlobalPtr()
@@ -329,16 +337,11 @@ proc setupRender2d*(this: ShowBase) =
   this.a2dBottomLeft.setPos(this.a2dLeft, 0, this.a2dBottom)
   this.a2dBottomRight.setPos(this.a2dRight, 0, this.a2dBottom)
 
-
-
-var
-    hold_base : ShowBase
-    fbprops: FrameBufferProperties
-
 proc evgen(args: openArray[EventParameter]) : void =
     # win: GraphicsWindow
-    # hold_base.windowEvent(win)
+    # i_ShowBase.windowEvent(win)
     echo "@@@@@@@@@ window-event accepted evgen"
+    i_ShowBase.windowEvent(dcast(GraphicsWindow, i_ShowBase.win))
     discard
 
 proc t_tasks(task: AsyncTask) : int =
@@ -348,8 +351,10 @@ proc t_tasks(task: AsyncTask) : int =
 
 proc openMainWindow*(this: ShowBase, props: WindowProperties = WindowProperties.getDefault()) =
   echo "346:begin // openMainWindow"
+  var cwd = getEnv("PWD","/opt/sdk/nimsdk/nim-panda3d")
+  echo fmt"   Work Directory : {cwd}"
 
-  hold_base= this
+  i_ShowBase = this
   this.makeAllPipes()
   this.graphicsEngine = GraphicsEngine.getGlobalPtr()
 
@@ -454,10 +459,10 @@ proc setFrameRateMeter*(this: ShowBase, flag: bool) =
 
 proc step*(this: ShowBase) =
     eventMgr.doEvents()
-    discard hold_base.dataLoop()
-    discard hold_base.ivalLoop()
-    discard hold_base.igLoop()
-    #discard hold_base.audioLoop()
+    discard i_ShowBase.dataLoop()
+    discard i_ShowBase.ivalLoop()
+    discard i_ShowBase.igLoop()
+    #discard i_ShowBase.audioLoop()
     AsyncTaskManager.getGlobalPtr().poll()
 
 

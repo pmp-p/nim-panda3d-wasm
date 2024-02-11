@@ -109,7 +109,7 @@ echo
 
 if [ -f ${WD}/${EXE} ]
 then
-    WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir / --env PWD="$(realpath $PWD)" --invoke renderAnimationFrame ${WD}/${EXE}
+    WASMTIME_BACKTRACE_DETAILS=1 wasmtime --dir / --env WASMTIME=1 --env PWD="$(realpath $PWD)" --invoke loop ${WD}/${EXE}
     mv out.bmp out.${ARCH}.bmp
 else
     echo "

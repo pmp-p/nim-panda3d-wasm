@@ -32,14 +32,23 @@ import direct/actor
 import direct/interval
 
 
+import piny/print
+
+template pass*: untyped = discard
+
+template lambda*(code: untyped): untyped =
+  (proc (): auto = code)  # Mimic Pythons Lambda
 
 when not defined(wasi):
     import std/posix
 
-
-
+#let
+#    cwd : string = getEnv("PWD","./")
 var
     base* : ShowBase
+    cwd* : string
+
+var
     True = true
     False = false
 
@@ -54,49 +63,60 @@ proc spinCameraTask(task: Task): auto =
     spin_cam(task.time)
     return Task.cont
 
-proc init() : void
+proc nim_ctor() : void {.gcsafe, nimcall.}
 
 proc NimMain(): void {.cdecl, importc.}
 
 when defined(static):
     proc init_libtinydisplay(): void {.importcpp: "init_libtinydisplay()", header: "config_tinydisplay.h".}
 
-{.pragma: constructor, codegenDecl: "__attribute__((constructor)) $# $#$#", exportc.}
 
-
-when defined(tryctor):
-    proc wasm_call_ctors() {.exportc, constructor, cdecl.} = NimMain()
-    discard
-
-
-proc renderAnimationFrame() : void {.exportc.} =
+proc setup(): void {.exportc, nimcall.} =
+    echo "setup:begin"
     if base != nil:
         echo "\n @@@@@@@@@@@ ctor was called   @@@@@ \n"
     else:
         when defined(wasi) and not defined(tryctor):
             NimMain()
             echo "\n   @@@@@@@@@@ NimMain/noctor @@@@@@@@@@@ \n"
-        init()
-
-    var
-        cwd = getEnv("PWD","./")
+        nim_ctor()
 
 
-    echo fmt"Work Directory : {cwd}"
+    echo "\n\n\n\n       =============== TEST ZONE ===============     "
+
+    cwd = getEnv("PWD","/opt/sdk/nimsdk/nim-panda3d")
+    echo fmt"   Work Directory : {cwd}"
+
+
 
     discard load_prc_file(init_fileName(fmt"{cwd}/wasi.prc"))
     discard load_prc_file_data("",fmt"model-path {cwd}" )
+
+    if getEnv("WASMTIME","0") == "1":
+        for path in walkFiles("*"):
+            echo fmt"{path=}"
+    else:
+        echo "  WASMTIME!=1 assuming WASM3"
+
 
     when defined(wasi):
         echo "hello wasi"
     else:
         #discard load_prc_file_data("", "load-display x11display")
         #discard load_prc_file_data("", "window-type offscreen")
-        discard
+        pass
 
-    echo "setup:begin"
 
-    echo "base.openDefaultWindow"
+    echo "setup:end\n\n\n"
+    pass
+
+#proc setup(): void {.exportc.} =
+proc loop(): void {.exportc.} =
+
+    echo "\n\n\n\n       =============== LOOP ZONE ===============     "
+
+
+    print("\n\nbase.openDefaultWindow")
     base.open_default_window()
 
     echo "base.disableMouse"
@@ -153,19 +173,11 @@ proc renderAnimationFrame() : void {.exportc.} =
             pandaPace.loop()
             #base.taskMgr.add(spinCameraTask, "SpinCameraTask")
 
-    echo "base.step"
+#proc loop(): void {.exportc.} =
+    echo "loop:begin"
     base.step()
     base.step()
     base.send("window-event")
-    var
-        i = 0
-    while i<60:
-        #spin_cam(1)
-        base.step()
-        i = i + 1
-        when not defined(wasi):
-            discard usleep(1)
-    echo "155"
     if base.win.save_screenshot(fmt"{cwd}/out.bmp", "from pview"):
         echo "screenshot:ok"
     else:
@@ -173,21 +185,26 @@ proc renderAnimationFrame() : void {.exportc.} =
         var
             result : Filename = base.win.saveScreenshotDefault(fmt"{cwd}/out")
         echo result
+    echo "loop:end"
 
-    echo "setup:end"
 
-proc init() : void =
-    when defined(static):
-        #init_libtinydisplay()
-        discard
+{.pragma: constructor, codegenDecl: "__attribute__((constructor)) $# $#$#", exportc.}
 
+
+when defined(tryctor):
+    proc wasm_call_ctors() {.exportc, constructor, cdecl.} = NimMain()
+    pass
+
+proc nim_ctor() : void  =
     PyInit_base()
     base = ShowBase()
+    when defined(tryctor):
+        setup()
 
     when not defined(wasi):
         echo "native"
-        renderAnimationFrame()
+        loop()
 
 
-init()
+nim_ctor()
 
